@@ -1,0 +1,84 @@
+{
+  "name": "TEST - OCR Surat Python (Farrel)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Uji OCR Surat (Python + Tesseract)",
+        "formDescription": "Unggah surat (PDF, DOCX, JPG/PNG). Teks diekstrak di server lokal, tidak dikirim ke layanan luar.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "file",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".pdf,.docx,.jpg,.jpeg,.png,.tif,.tiff",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "a1f0c1d2-0001-4c11-9a01-000000000001",
+      "name": "Form Unggah Surat",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [0, 0],
+      "webhookId": "b7c1e2f3-0001-4a22-8b02-000000000001"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8077/ocr",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "file"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "a1f0c1d2-0002-4c11-9a01-000000000002",
+      "name": "OCR (Python)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "f1", "name": "nama_file", "type": "string", "value": "={{ $json.filename }}" },
+            { "id": "f2", "name": "pakai_ocr", "type": "boolean", "value": "={{ $json.used_ocr }}" },
+            { "id": "f3", "name": "confidence_rata2", "type": "number", "value": "={{ $json.pages.map(p => p.confidence).filter(c => c !== null).average() || null }}" },
+            { "id": "f4", "name": "nomor_surat", "type": "string", "value": "={{ $json.fields.nomor_surat }}" },
+            { "id": "f5", "name": "perihal", "type": "string", "value": "={{ $json.fields.perihal }}" },
+            { "id": "f6", "name": "tanggal", "type": "string", "value": "={{ $json.fields.tanggal }}" },
+            { "id": "f7", "name": "lampiran", "type": "string", "value": "={{ $json.fields.lampiran }}" },
+            { "id": "f8", "name": "durasi_ms", "type": "number", "value": "={{ $json.duration_ms }}" },
+            { "id": "f9", "name": "teks", "type": "string", "value": "={{ $json.text }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a1f0c1d2-0003-4c11-9a01-000000000003",
+      "name": "Rangkum Hasil",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [480, 0]
+    }
+  ],
+  "connections": {
+    "Form Unggah Surat": { "main": [[{ "node": "OCR (Python)", "type": "main", "index": 0 }]] },
+    "OCR (Python)": { "main": [[{ "node": "Rangkum Hasil", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}

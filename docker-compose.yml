@@ -1,0 +1,37 @@
+# Jalankan:  docker compose up -d --build
+# n8n   -> http://localhost:5678
+# OCR   -> http://localhost:8077/docs  (dari dalam n8n: http://jup-ocr:8000/ocr)
+#
+# Kalau n8n kamu sudah jalan di container lain, cukup jalankan service jup-ocr saja:
+#   docker compose up -d --build jup-ocr
+# lalu di n8n pakai URL http://host.docker.internal:8077/ocr
+
+services:
+  jup-ocr:
+    build: .
+    container_name: jup-ocr
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8077:8000"   # hanya bisa diakses dari laptop ini
+    environment:
+      OCR_LANG: "ind+eng"
+      OCR_DPI: "300"
+      OCR_MAX_PAGES: "10"
+      # OCR_API_KEY: "ganti-dengan-rahasia"   # aktifkan kalau dipindah ke server
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5678:5678"
+    environment:
+      GENERIC_TIMEZONE: "Asia/Jakarta"
+      TZ: "Asia/Jakarta"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      - jup-ocr
+
+volumes:
+  n8n_data:
